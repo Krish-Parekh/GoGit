@@ -33,16 +33,21 @@ func initGitDir(baseDir string) error {
 func catFile(flag string, hash string) error {
 	switch flag {
 	case "-p":
+		// Folder is the first 2 characters of zlib | sha1sum
 		folder := hash[:2]
+		// File name is the rest of the hash
 		fileName := hash[2:]
+		// File path is the .git/objects/folder/fileName
 		filePath := ".git" + string(os.PathSeparator) + "objects" + string(os.PathSeparator) + folder + string(os.PathSeparator) + fileName
 
+		// Read the file
 		content, err := os.ReadFile(filePath)
 		if err != nil {
 			log.Printf("error reading file: %v", err)
 			return fmt.Errorf("error reading file: %w", err)
 		}
 
+		// Decompress the file
 		reader, err := zlib.NewReader(bytes.NewReader(content))
 		if err != nil {
 			log.Printf("error creating zlib reader: %v", err)
@@ -50,17 +55,21 @@ func catFile(flag string, hash string) error {
 		}
 		defer reader.Close()
 
+		// Decompress the file
 		decompressed, err := io.ReadAll(reader)
 		if err != nil {
 			log.Printf("error decompressing file: %v", err)
 			return fmt.Errorf("error decompressing file: %w", err)
 		}
 
+		// Find the null byte because the header is separated by a null byte
 		nullIndex := bytes.IndexByte(decompressed, '\x00')
 		if nullIndex == -1 {
-			fmt.Fprintf(os.Stderr, "Invalid object format: missing null byte\n")
-			os.Exit(1)
+			log.Printf("error finding null byte: %v", err)
+			return fmt.Errorf("error finding null byte: %w", err)
 		}
+
+		// Print the content after the null byte
 		fmt.Print(string(decompressed[nullIndex+1:]))
 		return nil
 	default:
