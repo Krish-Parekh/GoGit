@@ -31,7 +31,7 @@ func main() {
 		log.Fatalf("usage: gogit <command> [<args>...]")
 	}
 
-	switch command := os.Args[1]; command {
+	switch command := os.Args[2]; command {
 	case "init":
 		if err := initGitDir("."); err != nil {
 			log.Fatalf("init failed: %v", err)
