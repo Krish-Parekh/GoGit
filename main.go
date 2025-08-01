@@ -134,6 +134,41 @@ func hashObject(flag string, filePath string) error {
 	}
 }
 
+func lsTree(hash string) error {
+	folder := hash[:2]
+	fileName := hash[2:]
+
+	filePath := ".git" + string(os.PathSeparator) + "objects" + string(os.PathSeparator) + folder + string(os.PathSeparator) + fileName
+
+	content, err := os.ReadFile(filePath)
+	if err != nil {
+		log.Printf("error reading file: %v", err)
+		return fmt.Errorf("error reading file: %w", err)
+	}
+
+	reader, err := zlib.NewReader(bytes.NewReader(content))
+	if err != nil {
+		log.Printf("error creating zlib reader: %v", err)
+		return fmt.Errorf("error creating zlib reader: %w", err)
+	}
+	defer reader.Close()
+
+	decompressed, err := io.ReadAll(reader)
+	if err != nil {
+		log.Printf("error decompressing file: %v", err)
+		return fmt.Errorf("error decompressing file: %w", err)
+	}
+
+	nullIndex := bytes.IndexByte(decompressed, '\x00')
+	if nullIndex == -1 {
+		log.Printf("error finding null byte: %v", err)
+		return fmt.Errorf("error finding null byte: %w", err)
+	}
+
+	treeContent := decompressed[nullIndex+1:]
+
+}
+
 func main() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 	if len(os.Args) < 2 {
@@ -160,6 +195,13 @@ func main() {
 			log.Fatalf("hash-object failed: %v", err)
 		}
 		log.Println("hash-object successful")
+	case "ls-tree":
+		hash := os.Args[4]
+		if err := lsTree(hash); err != nil {
+			log.Fatalf("ls-tree failed: %v", err)
+		}
+		log.Println("ls-tree successful")
+
 	default:
 		fmt.Println("command: ", command)
 		log.Fatalf("unknown command: %s", command)
