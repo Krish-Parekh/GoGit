@@ -3,6 +3,8 @@ package main
 import (
 	"bytes"
 	"compress/zlib"
+	"crypto/sha1"
+	"encoding/hex"
 	"fmt"
 	"io"
 	"log"
@@ -77,6 +79,61 @@ func catFile(flag string, hash string) error {
 	}
 }
 
+func hashObject(flag string, filePath string) error {
+	switch flag {
+	case "-w":
+		content, err := os.ReadFile(filePath)
+		if err != nil {
+			log.Printf("error reading file: %v", err)
+			return fmt.Errorf("error reading file: %w", err)
+		}
+		// use sha1sum to hash the content
+		hash := sha1.New()
+		hash.Write(content)
+		hashValue := hash.Sum(nil)
+		hashString := hex.EncodeToString(hashValue)
+
+		// write the hash to the .git/objects/folder/fileName
+		folder := hashString[:2]
+		fileName := hashString[2:]
+
+		folderPath := ".git" + string(os.PathSeparator) + "objects" + string(os.PathSeparator) + folder
+		filePath := folderPath + string(os.PathSeparator) + fileName
+
+		// create the folder if it doesn't exist
+		if err := os.MkdirAll(folderPath, 0755); err != nil {
+			log.Printf("error creating directory: %v", err)
+			return fmt.Errorf("error creating directory: %w", err)
+		}
+
+		// create the file if it doesn't exist
+		if _, err := os.Create(filePath); err != nil {
+			log.Printf("error creating file: %v", err)
+			return fmt.Errorf("error creating file: %w", err)
+		}
+
+		// compress the content
+		compressed := bytes.NewBuffer(nil)
+		writer, err := zlib.NewWriterLevel(compressed, zlib.NoCompression)
+		if err != nil {
+			log.Printf("error creating zlib writer: %v", err)
+			return fmt.Errorf("error creating zlib writer: %w", err)
+		}
+		writer.Write(content)
+		writer.Close()
+
+		// write the compressed content to the file
+		if err := os.WriteFile(filePath, compressed.Bytes(), 0644); err != nil {
+			log.Printf("error writing file: %v", err)
+			return fmt.Errorf("error writing file: %w", err)
+		}
+
+		return nil
+	default:
+		return fmt.Errorf("unknown flag: %s", flag)
+	}
+}
+
 func main() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 	if len(os.Args) < 2 {
@@ -96,7 +153,13 @@ func main() {
 			log.Fatalf("cat-file failed: %v", err)
 		}
 		log.Println("cat-file successful")
-
+	case "hash-object":
+		flag := os.Args[3]
+		filePath := os.Args[4]
+		if err := hashObject(flag, filePath); err != nil {
+			log.Fatalf("hash-object failed: %v", err)
+		}
+		log.Println("hash-object successful")
 	default:
 		fmt.Println("command: ", command)
 		log.Fatalf("unknown command: %s", command)
