@@ -10,8 +10,7 @@ import (
 	"path/filepath"
 )
 
-func WriteObject(content []byte) (string, error) {
-	objectType := "blob"
+func WriteObject(content []byte, objectType string) (string, error) {
 
 	header := fmt.Appendf(nil, "%s %d\x00", objectType, len(content))
 

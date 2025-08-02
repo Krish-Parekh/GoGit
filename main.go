@@ -20,7 +20,7 @@ func main() {
 		}
 		log.Println("Initialized empty Git repository in ./.git/")
 	case "cat-file":
-		if len(os.Args) < 4 {
+		if len(os.Args) < 5 {
 			log.Fatalf("usage: gogit cat-file <flag> <hash>")
 		}
 		flag := os.Args[3]
@@ -29,7 +29,7 @@ func main() {
 			log.Fatalf("cat-file failed: %v", err)
 		}
 	case "hash-object":
-		if len(os.Args) < 4 {
+		if len(os.Args) < 5 {
 			log.Fatalf("usage: gogit hash-object <flag> <file>")
 		}
 		flag := os.Args[3]
@@ -45,6 +45,10 @@ func main() {
 		nameOnly := len(os.Args) > 4 && os.Args[4] == "--name-only"
 		if err := cmd.LsTreeCommand(hash, nameOnly); err != nil {
 			log.Fatalf("ls-tree failed: %v", err)
+		}
+	case "write-tree":
+		if err := cmd.WriteTreeCommand(); err != nil {
+			log.Fatalf("write-tree failed: %v", err)
 		}
 	}
 }

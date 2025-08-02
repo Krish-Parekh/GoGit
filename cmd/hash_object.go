@@ -19,7 +19,7 @@ func HashObjectCommand(flag string, filePath string) error {
 		return err
 	}
 
-	hash, err := object.WriteObject(content)
+	hash, err := object.WriteObject(content, "blob")
 	if err != nil {
 		log.Printf("error writing object for file %s: %v", filePath, err)
 		return err
