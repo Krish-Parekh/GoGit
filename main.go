@@ -10,6 +10,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -156,7 +157,7 @@ func lsTree(hash string) error {
 	defer zlibReader.Close()
 
 	reader := bufio.NewReader(zlibReader)
-	objectType, _ := reader.ReadString('\x00')
+	objectType, _ := reader.ReadString(' ')
 	objectType = strings.TrimSpace(objectType)
 
 	if objectType != "tree" {
@@ -164,6 +165,70 @@ func lsTree(hash string) error {
 		return fmt.Errorf("error: not a tree object: %w", err)
 	}
 
+	lengthStr, err := reader.ReadString(0)
+	lengthStr = lengthStr[:len(lengthStr)-1]
+	if err != nil {
+		log.Printf("error reading length string: %v", err)
+		return fmt.Errorf("error reading length string: %w", err)
+	}
+	objSize, _ := strconv.Atoi(lengthStr)
+
+	if objSize == 0 {
+		log.Printf("error: object file %s is empty", filePath)
+		return fmt.Errorf("error: object file %s is empty", filePath)
+	}
+
+	fileHash := make([]byte, 20)
+	for {
+		fileMode, err := reader.ReadString(' ')
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			log.Printf("error reading file mode: %v", err)
+			return fmt.Errorf("error reading file mode: %w", err)
+		}
+		fileMode = "000000" + fileMode[:len(fileMode)-1]
+		fileMode = fileMode[len(fileMode)-6:]
+
+		name, err := reader.ReadString('\000')
+		if err != nil {
+			log.Printf("error reading file name: %v", err)
+			return fmt.Errorf("error reading file name: %w", err)
+		}
+		name = name[:len(name)-1]
+
+		_, err = reader.Read(fileHash)
+		if err != nil {
+			log.Printf("error reading hash: %v", err)
+			return fmt.Errorf("error reading hash: %w", err)
+		}
+
+		hash := hex.EncodeToString(fileHash)
+		folder := hash[:2]
+		fileName := hash[2:]
+		filePath := ".git" + string(os.PathSeparator) + "objects" + string(os.PathSeparator) + folder + string(os.PathSeparator) + fileName
+		content, err := os.ReadFile(filePath)
+		if err != nil {
+			log.Printf("error reading file: %v", err)
+			return fmt.Errorf("error reading file: %w", err)
+		}
+
+		zlibReader, err := zlib.NewReader(bytes.NewReader(content))
+		if err != nil {
+			log.Printf("error creating zlib reader: %v", err)
+			return fmt.Errorf("error creating zlib reader: %w", err)
+		}
+
+		reader := bufio.NewReader(zlibReader)
+		objectType, _ := reader.ReadString(' ')
+		objectType = strings.TrimSpace(objectType)
+		lengthStr, _ := reader.ReadString(0)
+		lengthStr = lengthStr[:len(lengthStr)-1]
+		objSize, _ := strconv.Atoi(lengthStr)
+
+		fmt.Printf("%s %s %x\t%d\t%s\n", fileMode, objectType, fileHash, objSize, name)
+	}
 	return nil
 }
 
