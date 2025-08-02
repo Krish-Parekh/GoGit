@@ -14,9 +14,9 @@ Final implementation passes all stages of [git-tester v43](https://github.com/co
 - [x] Read a blob object
 - [x] Create a blob object
 - [x] Read a tree object
-- [] Write a tree object
-- [] Create a commit
-- [] Clone a repository
+- [ ] Write a tree object
+- [ ] Create a commit
+- [ ] Clone a repository
 
 ## Implemented subcommands
 
