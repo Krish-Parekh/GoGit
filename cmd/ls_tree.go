@@ -9,6 +9,16 @@ import (
 	"github.com/Krish-Parekh/GoGit/internal/object"
 )
 
+/*
+ls-tree: list the contents of a tree object
+
+A single tree object contains one or more entries, each of which is the SHA-1 hash of a blob or subtree with its associated mode, type, and filename
+
+Structure of the tree object:
+tree <space> <number of entries> <null byte> <entry 1> <entry 2> ... <entry n>
+
+*/
+
 func LsTreeCommand(hash string, nameOnly bool) error {
 	objectType, content, err := object.ReadObject(hash)
 	if err != nil {
@@ -20,6 +30,7 @@ func LsTreeCommand(hash string, nameOnly bool) error {
 		return fmt.Errorf("object %s is not a tree (is %s)", hash, objectType)
 	}
 
+	// Loop through all the entries in the tree object
 	for len(content) > 0 {
 		space := bytes.IndexByte(content, ' ')
 		if space == -1 {

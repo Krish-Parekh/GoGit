@@ -8,6 +8,10 @@ import (
 	"github.com/Krish-Parekh/GoGit/internal/object"
 )
 
+/*
+-w: write the object to the object store
+*/
+
 func HashObjectCommand(flag string, filePath string) error {
 	if flag != "-w" {
 		return fmt.Errorf("unknown flag for hash-object: %s (only -w is supported)", flag)

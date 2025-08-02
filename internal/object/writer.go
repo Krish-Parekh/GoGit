@@ -10,6 +10,21 @@ import (
 	"path/filepath"
 )
 
+/*
+Structure of the object:
+<object type> <space> <content length> <null byte> <content>
+Example:
+blob 10\0Hello World
+
+As discussed in reader.go, the objects are stored in the .git/objects folder.
+
+1. The first 2 characters of the hash are used to create the folder name.
+2. The remaining 38 characters are used to create the file name.
+3. The content is compressed using zlib.
+4. The compressed content is written to the file.
+
+*/
+
 func WriteObject(content []byte, objectType string) (string, error) {
 
 	header := fmt.Appendf(nil, "%s %d\x00", objectType, len(content))
